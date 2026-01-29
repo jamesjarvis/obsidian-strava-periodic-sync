@@ -1,0 +1,11 @@
+{
+	"id": "strava-daily-note-sync",
+	"name": "Strava Daily Note Sync",
+	"version": "1.0.0",
+	"minAppVersion": "0.15.0",
+	"description": "Sync Strava activities to your daily notes with OAuth2 authentication",
+	"author": "James Jarvis",
+	"authorUrl": "https://github.com/jamesjarvis",
+	"fundingUrl": "https://github.com/jamesjarvis",
+	"isDesktopOnly": true
+}
