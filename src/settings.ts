@@ -34,10 +34,8 @@ export class StravaSyncSettingTab extends PluginSettingTab {
 		containerEl.empty();
 		containerEl.addClass('strava-sync-settings');
 
-		containerEl.createEl('h2', { text: 'Strava Activity Sync Settings' });
-
 		// OAuth Configuration
-		containerEl.createEl('h3', { text: 'Strava API Configuration' });
+		new Setting(containerEl).setName('Strava API configuration').setHeading();
 
 		containerEl.createEl('p', {
 			text: 'Create an API application at ',
@@ -50,11 +48,11 @@ export class StravaSyncSettingTab extends PluginSettingTab {
 		// Client ID - stored in SecretStorage
 		const clientIdSetting = new Setting(containerEl)
 			.setName('Client ID')
-			.setDesc(`Your Strava API Client ID (stored securely) ${this.plugin.settings.clientIdConfigured ? '✓' : ''}`);
+			.setDesc(`Your Strava API client ID (stored securely) ${this.plugin.settings.clientIdConfigured ? '✓' : ''}`);
 
 		clientIdSetting.addText(text => {
 			text
-				.setPlaceholder('Enter new Client ID to update')
+				.setPlaceholder('Enter new client ID to update')
 				.onChange(() => {});
 			return text;
 		});
@@ -80,12 +78,12 @@ export class StravaSyncSettingTab extends PluginSettingTab {
 
 		// Client Secret - stored in SecretStorage
 		const clientSecretSetting = new Setting(containerEl)
-			.setName('Client Secret')
-			.setDesc(`Your Strava API Client Secret (stored securely) ${this.plugin.settings.clientSecretConfigured ? '✓' : ''}`);
+			.setName('Client secret')
+			.setDesc(`Your Strava API client secret (stored securely) ${this.plugin.settings.clientSecretConfigured ? '✓' : ''}`);
 
 		clientSecretSetting.addText(text => {
 			text
-				.setPlaceholder('Enter new Client Secret to update');
+				.setPlaceholder('Enter new client secret to update');
 			text.inputEl.setAttribute('type', 'password');
 			return text;
 		});
@@ -110,7 +108,7 @@ export class StravaSyncSettingTab extends PluginSettingTab {
 			}));
 
 		// Authorization
-		containerEl.createEl('h3', { text: 'Authorization' });
+		new Setting(containerEl).setName('Authorization').setHeading();
 
 		// Connection status display
 		this.connectionStatusEl = containerEl.createDiv('connection-status');
@@ -123,7 +121,7 @@ export class StravaSyncSettingTab extends PluginSettingTab {
 				.setDesc('Your Strava account is linked');
 
 			connectedSetting.addButton(button => button
-				.setButtonText('Test Connection')
+				.setButtonText('Test connection')
 				.onClick(async () => {
 					button.setButtonText('Testing...');
 					button.setDisabled(true);
@@ -139,7 +137,7 @@ export class StravaSyncSettingTab extends PluginSettingTab {
 						this.connectionStatusEl?.addClass('error');
 					}
 
-					button.setButtonText('Test Connection');
+					button.setButtonText('Test connection');
 					button.setDisabled(false);
 				}));
 
@@ -161,7 +159,7 @@ export class StravaSyncSettingTab extends PluginSettingTab {
 				.setName('Step 1: Authorize')
 				.setDesc('Click to open Strava authorization page. After authorizing, the page will fail to load - this is expected.')
 				.addButton(button => button
-					.setButtonText('Open Strava Auth')
+					.setButtonText('Open Strava auth')
 					.setCta()
 					.onClick(async () => {
 						if (!this.plugin.settings.clientIdConfigured || !this.plugin.settings.clientSecretConfigured) {
@@ -175,8 +173,8 @@ export class StravaSyncSettingTab extends PluginSettingTab {
 
 			// Step 2: Paste the code
 			let codeInput = '';
-			const codeSetting = new Setting(containerEl)
-				.setName('Step 2: Paste Authorization Code')
+			new Setting(containerEl)
+				.setName('Step 2: Paste authorization code')
 				.setDesc('Copy the "code" parameter from the failed URL (e.g., http://localhost?code=XXXXX) and paste it here')
 				.addText(text => text
 					.setPlaceholder('Paste code here')
@@ -210,10 +208,10 @@ export class StravaSyncSettingTab extends PluginSettingTab {
 		}
 
 		// Daily Note Display
-		containerEl.createEl('h3', { text: 'Daily Note Display' });
+		new Setting(containerEl).setName('Daily note display').setHeading();
 
 		new Setting(containerEl)
-			.setName('Daily Notes Folder')
+			.setName('Daily notes folder')
 			.setDesc('Path to your daily notes folder (leave empty to auto-detect from Periodic Notes or Daily Notes plugin)')
 			.addText(text => text
 				.setPlaceholder('e.g., Notes/Daily Notes')
@@ -224,7 +222,7 @@ export class StravaSyncSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName('Section Header')
+			.setName('Section header')
 			.setDesc('The markdown header to use for the activities section (must start with #)')
 			.addText(text => text
 				.setPlaceholder('#### Activities')
@@ -242,7 +240,7 @@ export class StravaSyncSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName('Omit Empty Section')
+			.setName('Omit empty section')
 			.setDesc('Hide the activities section when there are no workouts')
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.omitEmptySection)
@@ -252,10 +250,10 @@ export class StravaSyncSettingTab extends PluginSettingTab {
 				}));
 
 		// Auto-sync
-		containerEl.createEl('h3', { text: 'Auto-Sync' });
+		new Setting(containerEl).setName('Auto-sync').setHeading();
 
 		new Setting(containerEl)
-			.setName('Enable Auto-Sync')
+			.setName('Enable auto-sync')
 			.setDesc('Automatically sync at regular intervals')
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.autoSyncEnabled)
@@ -265,7 +263,7 @@ export class StravaSyncSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName('Sync Frequency')
+			.setName('Sync frequency')
 			.setDesc('How often to automatically sync')
 			.addDropdown(dropdown => dropdown
 				.addOption('300000', '5 minutes')
@@ -279,10 +277,10 @@ export class StravaSyncSettingTab extends PluginSettingTab {
 				}));
 
 		// Historical Sync
-		containerEl.createEl('h3', { text: 'Historical Sync' });
+		new Setting(containerEl).setName('Historical sync').setHeading();
 
 		new Setting(containerEl)
-			.setName('Historical Days')
+			.setName('Historical days')
 			.setDesc(`Sync activities from the last N days (0 = today only, max ${MAX_HISTORICAL_DAYS})`)
 			.addText(text => text
 				.setPlaceholder('0')
@@ -297,13 +295,13 @@ export class StravaSyncSettingTab extends PluginSettingTab {
 				}));
 
 		// Manual Sync
-		containerEl.createEl('h3', { text: 'Sync' });
+		new Setting(containerEl).setName('Sync').setHeading();
 
 		new Setting(containerEl)
-			.setName('Sync Activities')
+			.setName('Sync activities')
 			.setDesc('Fetch activities from Strava and update daily notes')
 			.addButton(button => button
-				.setButtonText('Sync Now')
+				.setButtonText('Sync now')
 				.setCta()
 				.onClick(async () => {
 					if (!this.plugin.isAuthenticated()) {
@@ -317,12 +315,12 @@ export class StravaSyncSettingTab extends PluginSettingTab {
 
 					await this.plugin.syncActivities();
 
-					button.setButtonText('Sync Now');
+					button.setButtonText('Sync now');
 					button.setDisabled(false);
 				}));
 
 		new Setting(containerEl)
-			.setName('Clear Activities Section')
+			.setName('Clear activities section')
 			.setDesc("Remove the activities section from today's daily note")
 			.addButton(button => button
 				.setButtonText('Clear')

@@ -1,4 +1,42 @@
-import { App, TFile, normalizePath } from 'obsidian';
+import { App, TFile, normalizePath, Plugin } from 'obsidian';
+
+// Type declarations for internal Obsidian plugin APIs
+interface PeriodicNotesSettings {
+	daily?: {
+		enabled?: boolean;
+		folder?: string;
+		format?: string;
+	};
+}
+
+interface PeriodicNotesPlugin extends Plugin {
+	settings?: PeriodicNotesSettings;
+}
+
+interface DailyNotesPluginInstance {
+	options?: {
+		folder?: string;
+		format?: string;
+	};
+}
+
+interface InternalPlugin {
+	enabled?: boolean;
+	instance?: DailyNotesPluginInstance;
+}
+
+interface InternalPlugins {
+	getPluginById?(id: string): InternalPlugin | undefined;
+}
+
+interface PluginsWithPeriodic {
+	getPlugin?(id: string): PeriodicNotesPlugin | undefined;
+}
+
+interface AppWithInternals extends App {
+	plugins?: PluginsWithPeriodic;
+	internalPlugins?: InternalPlugins;
+}
 import {
 	StravaSyncSettings,
 	StravaActivity,
@@ -43,7 +81,8 @@ export class DailyNoteManager {
 		}
 
 		// 2. Try Periodic Notes plugin (community plugin)
-		const periodicNotes = (this.app as any).plugins?.getPlugin?.('periodic-notes');
+		const appWithInternals = this.app as AppWithInternals;
+		const periodicNotes = appWithInternals.plugins?.getPlugin?.('periodic-notes');
 		if (periodicNotes?.settings?.daily?.enabled) {
 			const dailySettings = periodicNotes.settings.daily;
 			return {
@@ -53,7 +92,7 @@ export class DailyNoteManager {
 		}
 
 		// 3. Try Daily Notes core plugin
-		const internalPlugins = (this.app as any).internalPlugins;
+		const internalPlugins = appWithInternals.internalPlugins;
 		const dailyNotesPlugin = internalPlugins?.getPluginById?.('daily-notes');
 		if (dailyNotesPlugin?.enabled) {
 			const dailyNotesSettings = dailyNotesPlugin.instance?.options || {};
@@ -70,7 +109,7 @@ export class DailyNoteManager {
 		};
 	}
 
-	async getDailyNoteForDate(date: Date): Promise<TFile | null> {
+	getDailyNoteForDate(date: Date): TFile | null {
 		try {
 			const config = this.getDailyNotesConfig();
 			const formatted = this.formatDateWithPattern(date, config.format);

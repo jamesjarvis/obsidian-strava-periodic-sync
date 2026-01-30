@@ -125,7 +125,7 @@ export default class StravaSyncPlugin extends Plugin {
 
 		// Ribbon icon (activity icon)
 		this.ribbonIconEl = this.addRibbonIcon('activity', 'Sync Strava activities', () => {
-			this.syncActivities();
+			void this.syncActivities();
 		});
 
 		// Commands
@@ -133,7 +133,7 @@ export default class StravaSyncPlugin extends Plugin {
 			id: 'sync-strava-activities',
 			name: 'Sync Strava activities to daily note',
 			callback: () => {
-				this.syncActivities();
+				void this.syncActivities();
 			},
 		});
 
@@ -141,7 +141,7 @@ export default class StravaSyncPlugin extends Plugin {
 			id: 'clear-activities-section',
 			name: 'Clear activities section from daily note',
 			callback: () => {
-				this.clearActivitiesSection();
+				void this.clearActivitiesSection();
 			},
 		});
 
@@ -329,13 +329,11 @@ export default class StravaSyncPlugin extends Plugin {
 		this.clearAutoSync();
 
 		if (this.settings.autoSyncEnabled && this.settings.autoSyncFrequency > 0 && this.isAuthenticated()) {
-			this.autoSyncInterval = window.setInterval(async () => {
-				try {
-					await this.syncActivities();
-				} catch (error) {
+			this.autoSyncInterval = window.setInterval(() => {
+				void this.syncActivities().catch((error: unknown) => {
 					logger.error('Auto-sync failed', error);
 					// Don't show notice for auto-sync failures - just log
-				}
+				});
 			}, this.settings.autoSyncFrequency);
 		}
 	}
