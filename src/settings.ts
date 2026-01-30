@@ -117,8 +117,8 @@ export class StravaSyncSettingTab extends PluginSettingTab {
 		if (this.plugin.isAuthenticated()) {
 			// Already connected - show disconnect and test buttons
 			const connectedSetting = new Setting(containerEl)
-				.setName('Connected to Strava')
-				.setDesc('Your Strava account is linked');
+				.setName('Strava connected')
+				.setDesc('Strava account is linked');
 
 			connectedSetting.addButton(button => button
 				.setButtonText('Test connection')
@@ -150,20 +150,20 @@ export class StravaSyncSettingTab extends PluginSettingTab {
 		} else {
 			// Not connected - show auth flow
 			containerEl.createEl('p', {
-				text: 'Make sure your Strava API app has "Authorization Callback Domain" set to: localhost',
+				text: 'Make sure your Strava API application has "Authorization Callback Domain" set to localhost',
 				cls: 'setting-item-description',
 			});
 
 			// Step 1: Open auth URL
 			new Setting(containerEl)
-				.setName('Step 1: Authorize')
-				.setDesc('Click to open Strava authorization page. After authorizing, the page will fail to load - this is expected.')
+				.setName('Step 1: authorize')
+				.setDesc('Click to open Strava authorization page. After authorizing, the page will fail to load (this is expected).')
 				.addButton(button => button
-					.setButtonText('Open Strava auth')
+					.setButtonText('Open Strava authorization')
 					.setCta()
 					.onClick(async () => {
 						if (!this.plugin.settings.clientIdConfigured || !this.plugin.settings.clientSecretConfigured) {
-							this.connectionStatusEl?.setText('Please enter Client ID and Client Secret first');
+							this.connectionStatusEl?.setText('Please enter client ID and client secret first');
 							this.connectionStatusEl?.addClass('error');
 							return;
 						}
@@ -174,7 +174,7 @@ export class StravaSyncSettingTab extends PluginSettingTab {
 			// Step 2: Paste the code
 			let codeInput = '';
 			new Setting(containerEl)
-				.setName('Step 2: Paste authorization code')
+				.setName('Step 2: paste authorization code')
 				.setDesc('Copy the "code" parameter from the failed URL (e.g., http://localhost?code=XXXXX) and paste it here')
 				.addText(text => text
 					.setPlaceholder('Paste code here')
@@ -212,7 +212,7 @@ export class StravaSyncSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Daily notes folder')
-			.setDesc('Path to your daily notes folder (leave empty to auto-detect from Periodic Notes or Daily Notes plugin)')
+			.setDesc('Auto-detects from periodic notes or daily notes plugin if empty')
 			.addText(text => text
 				.setPlaceholder('e.g., Notes/Daily Notes')
 				.setValue(this.plugin.settings.dailyNotesFolder)
@@ -223,9 +223,9 @@ export class StravaSyncSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Section header')
-			.setDesc('The markdown header to use for the activities section (must start with #)')
+			.setDesc('Markdown header for the activities section (must start with #)')
 			.addText(text => text
-				.setPlaceholder('#### Activities')
+				.setPlaceholder('#### activities')
 				.setValue(this.plugin.settings.sectionHeader)
 				.onChange(async (value) => {
 					const validated = validateSectionHeader(value);
@@ -299,13 +299,13 @@ export class StravaSyncSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Sync activities')
-			.setDesc('Fetch activities from Strava and update daily notes')
+			.setDesc('Fetch Strava activities and update daily notes')
 			.addButton(button => button
 				.setButtonText('Sync now')
 				.setCta()
 				.onClick(async () => {
 					if (!this.plugin.isAuthenticated()) {
-						this.connectionStatusEl?.setText('Please authorize with Strava first');
+						this.connectionStatusEl?.setText('Please authorize first');
 						this.connectionStatusEl?.addClass('error');
 						return;
 					}
@@ -352,7 +352,7 @@ export class StravaSyncSettingTab extends PluginSettingTab {
 			this.connectionStatusEl.setText(`Connected (token expires: ${expiresAt.toLocaleString()})`);
 			this.connectionStatusEl.addClass('success');
 		} else {
-			this.connectionStatusEl.setText('Not connected - click "Authorize with Strava"');
+			this.connectionStatusEl.setText('Not connected - complete authorization above');
 			this.connectionStatusEl.addClass('pending');
 		}
 	}

@@ -232,7 +232,7 @@ export default class StravaSyncPlugin extends Plugin {
 		if (needsSave) {
 			await this.saveData(this.settings);
 			if (this.hasSecretStorage) {
-				new Notice('Strava: Migrated credentials to secure storage');
+				new Notice('Strava: migrated credentials to secure storage');
 			}
 			logger.info('Credential migration complete');
 		}
@@ -355,13 +355,13 @@ export default class StravaSyncPlugin extends Plugin {
 		await this.initializeApi();
 
 		if (!this.api) {
-			new Notice('Strava: Please enter Client ID and Client Secret first');
+			new Notice('Strava: please enter client ID and client secret first');
 			return;
 		}
 
 		const authUrl = this.api.getAuthorizationUrl();
 		window.open(authUrl);
-		new Notice('Strava: Opening authorization page. After authorizing, copy the code from the URL.');
+		new Notice('Strava: opening authorization page. After authorizing, copy the code from the URL.');
 	}
 
 	// Exchange authorization code for tokens (called from settings UI)
@@ -417,18 +417,18 @@ export default class StravaSyncPlugin extends Plugin {
 	// Sync methods
 	async syncActivities(): Promise<void> {
 		if (this.isSyncing) {
-			new Notice('Strava: Sync already in progress');
+			new Notice('Strava: sync already in progress');
 			return;
 		}
 
 		if (!this.api) {
-			new Notice('Strava: Please configure API credentials');
+			new Notice('Strava: please configure API credentials');
 			this.updateStatusBar('error', 'Not configured');
 			return;
 		}
 
 		if (!this.isAuthenticated()) {
-			new Notice('Strava: Please authorize with Strava first');
+			new Notice('Strava: please authorize first');
 			this.updateStatusBar('error', 'Not authorized');
 			return;
 		}
@@ -486,7 +486,7 @@ export default class StravaSyncPlugin extends Plugin {
 				new Notice(`Strava: ${message}`);
 			} else {
 				this.updateStatusBar('error', 'No daily notes');
-				new Notice('Strava: No daily notes found');
+				new Notice('Strava: no daily notes found');
 			}
 		} catch (error) {
 			const message = error instanceof Error ? error.message : 'Unknown error';
@@ -505,9 +505,9 @@ export default class StravaSyncPlugin extends Plugin {
 
 		const success = await this.dailyNoteManager.clearActivitiesSection();
 		if (success) {
-			new Notice('Strava: Cleared activities section');
+			new Notice('Strava: cleared activities section');
 		} else {
-			new Notice('Strava: No daily note found');
+			new Notice('Strava: no daily note found');
 		}
 		return success;
 	}
