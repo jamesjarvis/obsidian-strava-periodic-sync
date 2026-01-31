@@ -124,14 +124,14 @@ export default class StravaSyncPlugin extends Plugin {
 		this.updateStatusBar('idle');
 
 		// Ribbon icon (activity icon)
-		this.ribbonIconEl = this.addRibbonIcon('activity', 'Sync Strava activities', () => {
+		this.ribbonIconEl = this.addRibbonIcon('activity', 'Sync activities', () => {
 			void this.syncActivities();
 		});
 
 		// Commands
 		this.addCommand({
 			id: 'sync-strava-activities',
-			name: 'Sync Strava activities to daily note',
+			name: 'Sync activities to daily note',
 			callback: () => {
 				void this.syncActivities();
 			},

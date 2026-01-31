@@ -1,7 +1,7 @@
 {
 	"id": "strava-periodic-note-sync",
 	"name": "Strava Periodic Note Sync",
-	"version": "1.0.5",
+	"version": "1.0.6",
 	"minAppVersion": "1.10.0",
 	"description": "Sync Strava activities to your periodic notes.",
 	"author": "James Jarvis",

@@ -150,16 +150,16 @@ export class StravaSyncSettingTab extends PluginSettingTab {
 		} else {
 			// Not connected - show auth flow
 			containerEl.createEl('p', {
-				text: 'Make sure your Strava API application has "Authorization Callback Domain" set to localhost',
+				text: 'Ensure your API application has "authorization callback domain" set to localhost',
 				cls: 'setting-item-description',
 			});
 
 			// Step 1: Open auth URL
 			new Setting(containerEl)
 				.setName('Step 1: authorize')
-				.setDesc('Click to open Strava authorization page. After authorizing, the page will fail to load (this is expected).')
+				.setDesc('Opens the authorization page. After authorizing, the page will fail to load (this is expected).')
 				.addButton(button => button
-					.setButtonText('Open Strava authorization')
+					.setButtonText('Authorize')
 					.setCta()
 					.onClick(async () => {
 						if (!this.plugin.settings.clientIdConfigured || !this.plugin.settings.clientSecretConfigured) {
@@ -299,7 +299,7 @@ export class StravaSyncSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Sync activities')
-			.setDesc('Fetch Strava activities and update daily notes')
+			.setDesc('Fetch activities and update daily notes')
 			.addButton(button => button
 				.setButtonText('Sync now')
 				.setCta()
