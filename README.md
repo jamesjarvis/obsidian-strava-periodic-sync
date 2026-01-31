@@ -70,11 +70,26 @@ The plugin updates these frontmatter fields:
 | Sync Frequency | How often to auto-sync | 30 minutes |
 | Historical Sync Days | Backfill previous days | 0 |
 
-## Building from Source
+## Development
+
+### Building from Source
 
 ```bash
 npm install
 npm run build
+```
+
+### Running Tests
+
+```bash
+npm run test        # Run tests once
+npm run test:watch  # Run tests in watch mode
+```
+
+### Running Lints
+
+```bash
+npm run lint
 ```
 
 ## License

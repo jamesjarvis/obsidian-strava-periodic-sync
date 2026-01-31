@@ -43,8 +43,70 @@ import {
 	SyncResult,
 	FrontmatterMetrics,
 	getActivityEmoji,
+	getActivityCategory,
 } from './types';
 import { logger } from './logger';
+
+// Exported pure formatting functions for testing
+
+/** Format duration as MM:SS or H:MM:SS */
+export function formatDuration(seconds: number): string {
+	const hours = Math.floor(seconds / 3600);
+	const minutes = Math.floor((seconds % 3600) / 60);
+	const secs = Math.floor(seconds % 60);
+
+	if (hours > 0) {
+		return `${hours}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+	}
+	return `${minutes}:${String(secs).padStart(2, '0')}`;
+}
+
+/** Format pace as M:SS /km (for running/walking) */
+export function formatPace(speedMps: number): string {
+	if (speedMps <= 0) return '-';
+	const totalSeconds = Math.round(1000 / speedMps);
+	const minutes = Math.floor(totalSeconds / 60);
+	const seconds = totalSeconds % 60;
+	return `${minutes}:${String(seconds).padStart(2, '0')} /km`;
+}
+
+/** Format speed as XX.X km/h (for cycling) */
+export function formatSpeed(speedMps: number): string {
+	if (speedMps <= 0) return '-';
+	const kmh = speedMps * 3.6;
+	return `${kmh.toFixed(1)} km/h`;
+}
+
+/** Format distance as X.X km */
+export function formatDistance(metres: number): string {
+	return `${(metres / 1000).toFixed(1)} km`;
+}
+
+/** Cycling activity types */
+export const CYCLING_TYPES = ['Ride', 'VirtualRide', 'GravelRide', 'MountainBikeRide', 'EBikeRide'];
+
+/** Format a single activity line - pure function version */
+export function formatActivityLine(activity: StravaActivity): string {
+	const emoji = getActivityEmoji(activity.type);
+	const name = activity.name;
+	const distance = formatDistance(activity.distance);
+	const duration = formatDuration(activity.moving_time);
+	const elevation = activity.total_elevation_gain;
+
+	// Choose pace or speed based on activity type
+	const paceOrSpeed = CYCLING_TYPES.includes(activity.type)
+		? formatSpeed(activity.average_speed)
+		: formatPace(activity.average_speed);
+
+	let line = `- ${emoji} **${name}** - ${distance} in ${duration} (${paceOrSpeed})`;
+
+	// Add elevation if significant
+	if (elevation > 10) {
+		line += ` | +${Math.round(elevation)}m elevation`;
+	}
+
+	return line;
+}
 
 export class DailyNoteManager {
 	private app: App;
@@ -152,61 +214,9 @@ export class DailyNoteManager {
 		}
 	}
 
-	// Format duration as MM:SS or H:MM:SS
-	private formatDuration(seconds: number): string {
-		const hours = Math.floor(seconds / 3600);
-		const minutes = Math.floor((seconds % 3600) / 60);
-		const secs = Math.floor(seconds % 60);
-
-		if (hours > 0) {
-			return `${hours}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-		}
-		return `${minutes}:${String(secs).padStart(2, '0')}`;
-	}
-
-	// Format pace as M:SS /km (for running/walking)
-	private formatPace(speedMps: number): string {
-		if (speedMps <= 0) return '-';
-		const paceSecondsPerKm = 1000 / speedMps;
-		const minutes = Math.floor(paceSecondsPerKm / 60);
-		const seconds = Math.round(paceSecondsPerKm % 60);
-		return `${minutes}:${String(seconds).padStart(2, '0')} /km`;
-	}
-
-	// Format speed as XX.X km/h (for cycling)
-	private formatSpeed(speedMps: number): string {
-		if (speedMps <= 0) return '-';
-		const kmh = speedMps * 3.6;
-		return `${kmh.toFixed(1)} km/h`;
-	}
-
-	// Format distance as X.X km
-	private formatDistance(metres: number): string {
-		return `${(metres / 1000).toFixed(1)} km`;
-	}
-
-	// Format a single activity line
+	// Format a single activity line - delegates to exported pure function
 	formatActivity(activity: StravaActivity): string {
-		const emoji = getActivityEmoji(activity.type);
-		const name = activity.name;
-		const distance = this.formatDistance(activity.distance);
-		const duration = this.formatDuration(activity.moving_time);
-		const elevation = activity.total_elevation_gain;
-
-		// Choose pace or speed based on activity type
-		const cyclingTypes = ['Ride', 'VirtualRide', 'GravelRide', 'MountainBikeRide', 'EBikeRide'];
-		const paceOrSpeed = cyclingTypes.includes(activity.type)
-			? this.formatSpeed(activity.average_speed)
-			: this.formatPace(activity.average_speed);
-
-		let line = `- ${emoji} **${name}** - ${distance} in ${duration} (${paceOrSpeed})`;
-
-		// Add elevation if significant
-		if (elevation > 10) {
-			line += ` | +${Math.round(elevation)}m elevation`;
-		}
-
-		return line;
+		return formatActivityLine(activity);
 	}
 
 	// Format the activities section content

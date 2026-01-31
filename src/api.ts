@@ -63,20 +63,10 @@ export class StravaAPI {
 
 	/**
 	 * Calculate backoff with exponential increase and jitter.
+	 * Uses the exported calculateBackoff function with instance jitter method.
 	 */
 	private calculateBackoff(attempt: number, retryAfterHeader?: string): number {
-		// If server tells us how long to wait, respect that (with some jitter)
-		if (retryAfterHeader) {
-			const retryAfterSeconds = parseInt(retryAfterHeader, 10);
-			if (!isNaN(retryAfterSeconds)) {
-				return this.addJitter(retryAfterSeconds * 1000);
-			}
-		}
-
-		// Exponential backoff: 500ms, 1s, 2s, 4s, 8s... capped at MAX_BACKOFF_MS
-		const exponentialMs = INITIAL_BACKOFF_MS * Math.pow(2, attempt);
-		const cappedMs = Math.min(exponentialMs, MAX_BACKOFF_MS);
-		return this.addJitter(cappedMs);
+		return calculateBackoff(attempt, retryAfterHeader, this.addJitter.bind(this));
 	}
 
 	private async rateLimit(): Promise<void> {
@@ -365,6 +355,39 @@ export class StravaAPI {
 	isAuthenticated(): boolean {
 		return !!(this.tokenStorage.accessToken && this.tokenStorage.refreshToken);
 	}
+}
+
+// Exported for testing
+export const BACKOFF_CONFIG = {
+	MAX_RETRIES,
+	INITIAL_BACKOFF_MS,
+	MAX_BACKOFF_MS,
+} as const;
+
+/**
+ * Calculate backoff delay with exponential increase and optional jitter.
+ * Exported for testing.
+ */
+export function calculateBackoff(
+	attempt: number,
+	retryAfterHeader?: string,
+	addJitter: (ms: number) => number = (ms) => {
+		const jitterFactor = 0.75 + Math.random() * 0.5;
+		return Math.round(ms * jitterFactor);
+	}
+): number {
+	// If server tells us how long to wait, respect that (with some jitter)
+	if (retryAfterHeader) {
+		const retryAfterSeconds = parseInt(retryAfterHeader, 10);
+		if (!isNaN(retryAfterSeconds)) {
+			return addJitter(retryAfterSeconds * 1000);
+		}
+	}
+
+	// Exponential backoff: 500ms, 1s, 2s, 4s, 8s... capped at MAX_BACKOFF_MS
+	const exponentialMs = INITIAL_BACKOFF_MS * Math.pow(2, attempt);
+	const cappedMs = Math.min(exponentialMs, MAX_BACKOFF_MS);
+	return addJitter(cappedMs);
 }
 
 // Helper: format date as YYYY-MM-DD
