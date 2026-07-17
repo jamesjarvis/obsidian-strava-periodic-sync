@@ -14,18 +14,28 @@ Sync your Strava activities to Obsidian daily notes with OAuth2 authentication.
 
 ## Installation
 
-### Manual Installation
+### Community plugin store (pending approval)
 
-1. Download the latest release (`main.js`, `manifest.json`)
-2. Create folder: `.obsidian/plugins/strava-daily-note-sync/`
-3. Copy files into the folder
-4. Enable the plugin in Obsidian settings
+The plugin is under review for the community plugin store ([obsidianmd/obsidian-releases#9891](https://github.com/obsidianmd/obsidian-releases/pull/9891)). Once approved, install it via Settings → Community plugins → Browse.
 
-### BRAT (Beta Reviewers Auto-update Tester)
+### BRAT (recommended until store approval)
 
 1. Install the [BRAT plugin](https://github.com/TfTHacker/obsidian42-brat)
-2. Add this repository: `jamesjarvis/obsidian-strava-periodic-sync`
-3. Enable the plugin
+2. In BRAT settings, choose "Add beta plugin" and enter `jamesjarvis/obsidian-strava-periodic-sync`
+3. Enable the plugin in Obsidian settings
+
+BRAT automatically updates the plugin whenever a new release is published.
+
+### Manual installation
+
+1. Download **only** `main.js` and `manifest.json` from the [latest release](https://github.com/jamesjarvis/obsidian-strava-periodic-sync/releases/latest)
+2. Create the folder `<vault>/.obsidian/plugins/strava-periodic-note-sync/`
+3. Copy the two files into that folder
+4. Enable the plugin in Obsidian settings
+
+> **Warning:** Do not clone the repository into your vault. The repo contains `node_modules/` and `src/`, which bloat the vault and break iCloud sync. Only `main.js` and `manifest.json` belong in the plugin folder.
+
+Your settings are stored in `data.json` inside the plugin folder — keep that file when updating manually.
 
 ## Setup
 
@@ -91,6 +101,31 @@ npm run test:watch  # Run tests in watch mode
 ```bash
 npm run lint
 ```
+
+### Installing a dev build
+
+Keep the repository outside your vault. To test a build in Obsidian:
+
+```bash
+npm run build
+OBSIDIAN_VAULT=/path/to/vault npm run install-to-vault
+```
+
+This copies only `main.js` and `manifest.json` into the plugin folder, then reload Obsidian to pick up the change. For faster iteration with `npm run dev`, the community [Hot Reload](https://github.com/pjeby/hot-reload) plugin reloads the plugin automatically on rebuild.
+
+### Releasing
+
+```bash
+npm version patch --no-git-tag-version
+```
+
+This syncs the version across `package.json`, `manifest.json`, and `versions.json` via `version-bump.mjs`. Then:
+
+1. Commit the version bump
+2. Tag with the bare version: `git tag X.Y.Z` (no `v` prefix — Obsidian requires the tag to match the manifest version)
+3. Push the tag: `git push origin X.Y.Z`
+
+CI drafts a GitHub release with `main.js` and `manifest.json` attached. Publish the draft to make it available.
 
 ## License
 

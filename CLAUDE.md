@@ -34,9 +34,11 @@ If tests fail, fix issues before committing.
 
 ### 1. Bump version
 
-Update version in both files (must match):
-- `manifest.json` - `"version": "X.Y.Z"`
-- `package.json` - `"version": "X.Y.Z"`
+```bash
+npm version patch --no-git-tag-version   # or minor / major
+```
+
+This runs `version-bump.mjs`, which syncs `manifest.json` and `versions.json` to the new `package.json` version automatically.
 
 ### 2. Commit and push
 
