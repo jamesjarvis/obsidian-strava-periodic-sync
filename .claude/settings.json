@@ -2,28 +2,22 @@
 	"hooks": {
 		"PostToolUse": [
 			{
-				"matcher": {
-					"toolName": "edit|write",
-					"filePath": "\\.tsx?$"
-				},
+				"matcher": "Edit|Write",
 				"hooks": [
 					{
 						"type": "command",
-						"command": "npm run lint 2>&1 | head -50"
+						"command": "jq -r '.tool_input.file_path // empty' | grep -qE '\\.tsx?$' && npm run lint 2>&1 | head -50 || true"
 					}
 				]
 			}
 		],
 		"PreToolUse": [
 			{
-				"matcher": {
-					"toolName": "bash",
-					"bashCommand": "git commit"
-				},
+				"matcher": "Bash",
 				"hooks": [
 					{
 						"type": "command",
-						"command": "npm run build && npm run lint && npm run test"
+						"command": "jq -r '.tool_input.command // empty' | grep -q 'git commit' || exit 0; npm run build && npm run lint && npm run test || exit 2"
 					}
 				]
 			}

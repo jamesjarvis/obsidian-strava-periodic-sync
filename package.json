@@ -1,6 +1,6 @@
 {
 	"name": "strava-periodic-note-sync",
-	"version": "1.0.6",
+	"version": "1.0.7",
 	"description": "Sync Strava activities to Obsidian daily notes",
 	"main": "main.js",
 	"scripts": {
