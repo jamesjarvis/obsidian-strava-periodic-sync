@@ -12,9 +12,10 @@ export interface StravaSyncSettings {
 	accessToken?: string;
 	refreshToken?: string;
 
-	// Status flags for SecretStorage
-	clientIdConfigured: boolean;
-	clientSecretConfigured: boolean;
+	// Names of the secrets in Obsidian's SecretStorage holding the client credentials.
+	// Empty string = not configured.
+	clientIdSecretId: string;
+	clientSecretSecretId: string;
 	isAuthenticated: boolean;
 
 	// Token expiry (not sensitive, kept in settings)
@@ -34,8 +35,8 @@ export interface StravaSyncSettings {
 }
 
 export const DEFAULT_SETTINGS: StravaSyncSettings = {
-	clientIdConfigured: false,
-	clientSecretConfigured: false,
+	clientIdSecretId: '',
+	clientSecretSecretId: '',
 	isAuthenticated: false,
 	expiresAt: 0,
 	dailyNotesFolder: '', // Empty = auto-detect

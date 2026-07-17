@@ -25,98 +25,32 @@ export default class StravaSyncPlugin extends Plugin {
 	private statusBarItem: HTMLElement | null = null;
 	private ribbonIconEl: HTMLElement | null = null;
 	private isSyncing = false;
-	private hasSecretStorage = false;
 
 	/**
-	 * Check if SecretStorage API is available (Obsidian 1.10.0+).
+	 * Read a secret from Obsidian's SecretStorage.
+	 * Empty values are treated as unset (SecretStorage has no delete API,
+	 * so cleared secrets are stored as empty strings).
 	 */
-	private checkSecretStorageAvailable(): boolean {
-		return !!(
-			this.app.secretStorage &&
-			typeof this.app.secretStorage.get === 'function' &&
-			typeof this.app.secretStorage.set === 'function'
-		);
+	getSecret(id: string): string | null {
+		return this.app.secretStorage.getSecret(id) || null;
 	}
 
-	/**
-	 * Get a secret value - uses SecretStorage if available, falls back to settings.
-	 */
-	async getSecret(key: string): Promise<string | null> {
-		if (this.hasSecretStorage) {
-			return await this.app.secretStorage.get(key) || null;
-		}
-		// Fallback: check if we have it stored in settings (legacy)
-		if (key === SECRET_KEY_CLIENT_ID && this.settings.clientId) {
-			return this.settings.clientId;
-		}
-		if (key === SECRET_KEY_CLIENT_SECRET && this.settings.clientSecret) {
-			return this.settings.clientSecret;
-		}
-		if (key === SECRET_KEY_ACCESS_TOKEN && this.settings.accessToken) {
-			return this.settings.accessToken;
-		}
-		if (key === SECRET_KEY_REFRESH_TOKEN && this.settings.refreshToken) {
-			return this.settings.refreshToken;
-		}
-		return null;
+	setSecret(id: string, value: string): void {
+		this.app.secretStorage.setSecret(id, value);
 	}
 
-	/**
-	 * Set a secret value - uses SecretStorage if available, falls back to settings.
-	 */
-	async setSecret(key: string, value: string): Promise<void> {
-		if (this.hasSecretStorage) {
-			await this.app.secretStorage.set(key, value);
-		} else {
-			// Fallback: store in settings (plaintext - not ideal but functional)
-			if (key === SECRET_KEY_CLIENT_ID) {
-				this.settings.clientId = value;
-			} else if (key === SECRET_KEY_CLIENT_SECRET) {
-				this.settings.clientSecret = value;
-			} else if (key === SECRET_KEY_ACCESS_TOKEN) {
-				this.settings.accessToken = value;
-			} else if (key === SECRET_KEY_REFRESH_TOKEN) {
-				this.settings.refreshToken = value;
-			}
-			await this.saveData(this.settings);
-		}
-	}
-
-	/**
-	 * Delete a secret value.
-	 */
-	async deleteSecret(key: string): Promise<void> {
-		if (this.hasSecretStorage) {
-			await this.app.secretStorage.delete(key);
-		} else {
-			// Fallback: clear from settings
-			if (key === SECRET_KEY_CLIENT_ID) {
-				delete this.settings.clientId;
-			} else if (key === SECRET_KEY_CLIENT_SECRET) {
-				delete this.settings.clientSecret;
-			} else if (key === SECRET_KEY_ACCESS_TOKEN) {
-				delete this.settings.accessToken;
-			} else if (key === SECRET_KEY_REFRESH_TOKEN) {
-				delete this.settings.refreshToken;
-			}
-			await this.saveData(this.settings);
-		}
+	private clearSecret(id: string): void {
+		this.app.secretStorage.setSecret(id, '');
 	}
 
 	async onload(): Promise<void> {
 		await this.loadSettings();
 
-		// Check if SecretStorage is available (Obsidian 1.10.0+)
-		this.hasSecretStorage = this.checkSecretStorageAvailable();
-		if (!this.hasSecretStorage) {
-			logger.info('SecretStorage not available (requires Obsidian 1.10.0+), using fallback storage');
-		}
-
 		// Migrate plaintext credentials to SecretStorage if needed
 		await this.migrateToSecretStorage();
 
 		// Initialize managers
-		await this.initializeApi();
+		this.initializeApi();
 		this.dailyNoteManager = new DailyNoteManager(this.app, this.settings);
 
 		// Status bar
@@ -164,76 +98,48 @@ export default class StravaSyncPlugin extends Plugin {
 
 	/**
 	 * Migrate plaintext credentials from data.json to SecretStorage.
-	 * This handles users upgrading from older versions.
-	 * If SecretStorage isn't available, just mark credentials as configured.
+	 * Handles users upgrading from versions that stored credentials in plaintext.
 	 */
 	private async migrateToSecretStorage(): Promise<void> {
 		let needsSave = false;
 
-		// Migrate client ID
-		if (this.settings.clientId && !this.settings.clientIdConfigured) {
-			if (this.hasSecretStorage) {
-				logger.info('Migrating client ID to SecretStorage...');
-				try {
-					await this.app.secretStorage.set(SECRET_KEY_CLIENT_ID, this.settings.clientId);
-					this.settings.clientIdConfigured = true;
-					delete this.settings.clientId;
-					needsSave = true;
-				} catch (error) {
-					logger.error('Failed to migrate client ID', error);
-				}
-			} else {
-				// SecretStorage not available - keep using plaintext but mark as configured
-				this.settings.clientIdConfigured = true;
-				needsSave = true;
-			}
+		if (this.settings.clientId) {
+			this.setSecret(SECRET_KEY_CLIENT_ID, this.settings.clientId);
+			this.settings.clientIdSecretId = SECRET_KEY_CLIENT_ID;
+			delete this.settings.clientId;
+			needsSave = true;
 		}
 
-		// Migrate client secret
-		if (this.settings.clientSecret && !this.settings.clientSecretConfigured) {
-			if (this.hasSecretStorage) {
-				logger.info('Migrating client secret to SecretStorage...');
-				try {
-					await this.app.secretStorage.set(SECRET_KEY_CLIENT_SECRET, this.settings.clientSecret);
-					this.settings.clientSecretConfigured = true;
-					delete this.settings.clientSecret;
-					needsSave = true;
-				} catch (error) {
-					logger.error('Failed to migrate client secret', error);
-				}
-			} else {
-				this.settings.clientSecretConfigured = true;
-				needsSave = true;
-			}
+		if (this.settings.clientSecret) {
+			this.setSecret(SECRET_KEY_CLIENT_SECRET, this.settings.clientSecret);
+			this.settings.clientSecretSecretId = SECRET_KEY_CLIENT_SECRET;
+			delete this.settings.clientSecret;
+			needsSave = true;
 		}
 
-		// Migrate access token
-		if (this.settings.accessToken && !this.settings.isAuthenticated) {
-			if (this.hasSecretStorage) {
-				logger.info('Migrating OAuth tokens to SecretStorage...');
-				try {
-					await this.app.secretStorage.set(SECRET_KEY_ACCESS_TOKEN, this.settings.accessToken);
-					if (this.settings.refreshToken) {
-						await this.app.secretStorage.set(SECRET_KEY_REFRESH_TOKEN, this.settings.refreshToken);
-					}
-					this.settings.isAuthenticated = true;
-					delete this.settings.accessToken;
-					delete this.settings.refreshToken;
-					needsSave = true;
-				} catch (error) {
-					logger.error('Failed to migrate OAuth tokens', error);
-				}
-			} else {
-				this.settings.isAuthenticated = true;
+		if (this.settings.accessToken) {
+			this.setSecret(SECRET_KEY_ACCESS_TOKEN, this.settings.accessToken);
+			if (this.settings.refreshToken) {
+				this.setSecret(SECRET_KEY_REFRESH_TOKEN, this.settings.refreshToken);
+			}
+			this.settings.isAuthenticated = true;
+			delete this.settings.accessToken;
+			delete this.settings.refreshToken;
+			needsSave = true;
+		}
+
+		// Drop status flags left behind by older versions
+		const legacy = this.settings as Record<string, unknown>;
+		for (const key of ['clientIdConfigured', 'clientSecretConfigured']) {
+			if (key in legacy) {
+				delete legacy[key];
 				needsSave = true;
 			}
 		}
 
 		if (needsSave) {
 			await this.saveData(this.settings);
-			if (this.hasSecretStorage) {
-				new Notice('Strava: migrated credentials to secure storage');
-			}
+			new Notice('Strava: migrated credentials to secure storage');
 			logger.info('Credential migration complete');
 		}
 	}
@@ -253,28 +159,25 @@ export default class StravaSyncPlugin extends Plugin {
 		this.setupAutoSync();
 	}
 
-	private async initializeApi(): Promise<void> {
-		if (!this.settings.clientIdConfigured || !this.settings.clientSecretConfigured) {
+	private initializeApi(): void {
+		const { clientIdSecretId, clientSecretSecretId } = this.settings;
+		if (!clientIdSecretId || !clientSecretSecretId) {
 			this.api = null;
 			return;
 		}
 
-		const clientId = await this.getSecret(SECRET_KEY_CLIENT_ID);
-		const clientSecret = await this.getSecret(SECRET_KEY_CLIENT_SECRET);
+		const clientId = this.getSecret(clientIdSecretId);
+		const clientSecret = this.getSecret(clientSecretSecretId);
 
 		if (!clientId || !clientSecret) {
-			logger.warn('Client credentials marked as configured but not found');
+			logger.warn('Client credential secrets configured but not found in secret storage');
 			this.api = null;
 			return;
 		}
 
-		// Get tokens
-		const accessToken = await this.getSecret(SECRET_KEY_ACCESS_TOKEN);
-		const refreshToken = await this.getSecret(SECRET_KEY_REFRESH_TOKEN);
-
 		const tokens: TokenStorage = {
-			accessToken: accessToken || '',
-			refreshToken: refreshToken || '',
+			accessToken: this.getSecret(SECRET_KEY_ACCESS_TOKEN) || '',
+			refreshToken: this.getSecret(SECRET_KEY_REFRESH_TOKEN) || '',
 			expiresAt: this.settings.expiresAt,
 		};
 
@@ -284,8 +187,8 @@ export default class StravaSyncPlugin extends Plugin {
 			tokens,
 			async (newTokens) => {
 				// Save refreshed tokens
-				await this.setSecret(SECRET_KEY_ACCESS_TOKEN, newTokens.accessToken);
-				await this.setSecret(SECRET_KEY_REFRESH_TOKEN, newTokens.refreshToken);
+				this.setSecret(SECRET_KEY_ACCESS_TOKEN, newTokens.accessToken);
+				this.setSecret(SECRET_KEY_REFRESH_TOKEN, newTokens.refreshToken);
 				// Expiry is not sensitive, keep in settings
 				this.settings.expiresAt = newTokens.expiresAt;
 				this.settings.isAuthenticated = true;
@@ -350,9 +253,9 @@ export default class StravaSyncPlugin extends Plugin {
 		return this.settings.isAuthenticated;
 	}
 
-	async startOAuthFlow(): Promise<void> {
+	startOAuthFlow(): void {
 		// Make sure API is initialized with current credentials
-		await this.initializeApi();
+		this.initializeApi();
 
 		if (!this.api) {
 			new Notice('Strava: please enter client ID and client secret first');
@@ -367,7 +270,7 @@ export default class StravaSyncPlugin extends Plugin {
 	// Exchange authorization code for tokens (called from settings UI)
 	async exchangeAuthCode(code: string): Promise<void> {
 		// Make sure API is initialized
-		await this.initializeApi();
+		this.initializeApi();
 
 		if (!this.api) {
 			throw new Error('API not initialized');
@@ -390,8 +293,8 @@ export default class StravaSyncPlugin extends Plugin {
 
 	async disconnectStrava(): Promise<void> {
 		// Clear tokens
-		await this.deleteSecret(SECRET_KEY_ACCESS_TOKEN);
-		await this.deleteSecret(SECRET_KEY_REFRESH_TOKEN);
+		this.clearSecret(SECRET_KEY_ACCESS_TOKEN);
+		this.clearSecret(SECRET_KEY_REFRESH_TOKEN);
 
 		// Update settings
 		this.settings.isAuthenticated = false;

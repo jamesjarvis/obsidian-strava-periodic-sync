@@ -21,7 +21,38 @@ export class TFolder {
 	name = '';
 }
 
+export class SecretStorage {
+	private secrets = new Map<string, string>();
+
+	setSecret(id: string, secret: string): void {
+		this.secrets.set(id, secret);
+	}
+
+	getSecret(id: string): string | null {
+		return this.secrets.has(id) ? (this.secrets.get(id) as string) : null;
+	}
+
+	listSecrets(): string[] {
+		return Array.from(this.secrets.keys());
+	}
+}
+
+export class BaseComponent {}
+
+export class SecretComponent extends BaseComponent {
+	constructor(_app: App, _containerEl: unknown) {
+		super();
+	}
+	setValue(): this {
+		return this;
+	}
+	onChange(): this {
+		return this;
+	}
+}
+
 export class App {
+	secretStorage = new SecretStorage();
 	vault = {
 		read: () => Promise.resolve(''),
 		process: () => Promise.resolve(),
@@ -71,6 +102,7 @@ export class Setting {
 	addButton = () => this;
 	addToggle = () => this;
 	addDropdown = () => this;
+	addComponent = () => this;
 }
 
 export class Notice {

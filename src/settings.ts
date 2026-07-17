@@ -1,7 +1,5 @@
-import { App, PluginSettingTab, Setting, normalizePath } from 'obsidian';
+import { App, PluginSettingTab, SecretComponent, Setting, normalizePath } from 'obsidian';
 import StravaSyncPlugin from './main';
-import { SECRET_KEY_CLIENT_ID, SECRET_KEY_CLIENT_SECRET } from './types';
-import { logger } from './logger';
 
 // Validation helpers
 const MAX_HISTORICAL_DAYS = 90;
@@ -45,67 +43,27 @@ export class StravaSyncSettingTab extends PluginSettingTab {
 			href: 'https://www.strava.com/settings/api',
 		});
 
-		// Client ID - stored in SecretStorage
-		const clientIdSetting = new Setting(containerEl)
+		// Client ID - stored in Obsidian's secret storage
+		new Setting(containerEl)
 			.setName('Client ID')
-			.setDesc(`Your Strava API client ID (stored securely) ${this.plugin.settings.clientIdConfigured ? '✓' : ''}`);
+			.setDesc('Secret holding your Strava API client ID')
+			.addComponent(el => new SecretComponent(this.app, el)
+				.setValue(this.plugin.settings.clientIdSecretId)
+				.onChange(value => {
+					this.plugin.settings.clientIdSecretId = value;
+					void this.plugin.saveSettings().then(() => this.updateConnectionStatus());
+				}));
 
-		clientIdSetting.addText(text => {
-			text
-				.setPlaceholder('Enter new client ID to update')
-				.onChange(() => {});
-			return text;
-		});
-
-		clientIdSetting.addButton(button => button
-			.setButtonText('Save')
-			.onClick(async () => {
-				const inputEl = clientIdSetting.controlEl.querySelector('input') as HTMLInputElement;
-				const value = inputEl?.value?.trim();
-				if (!value) return;
-
-				try {
-					await this.plugin.setSecret(SECRET_KEY_CLIENT_ID, value);
-					this.plugin.settings.clientIdConfigured = true;
-					await this.plugin.saveSettings();
-					inputEl.value = '';
-					this.display(); // Refresh
-					logger.info('Client ID saved');
-				} catch (error) {
-					logger.error('Failed to save Client ID', error);
-				}
-			}));
-
-		// Client Secret - stored in SecretStorage
-		const clientSecretSetting = new Setting(containerEl)
+		// Client secret - stored in Obsidian's secret storage
+		new Setting(containerEl)
 			.setName('Client secret')
-			.setDesc(`Your Strava API client secret (stored securely) ${this.plugin.settings.clientSecretConfigured ? '✓' : ''}`);
-
-		clientSecretSetting.addText(text => {
-			text
-				.setPlaceholder('Enter new client secret to update');
-			text.inputEl.setAttribute('type', 'password');
-			return text;
-		});
-
-		clientSecretSetting.addButton(button => button
-			.setButtonText('Save')
-			.onClick(async () => {
-				const inputEl = clientSecretSetting.controlEl.querySelector('input') as HTMLInputElement;
-				const value = inputEl?.value?.trim();
-				if (!value) return;
-
-				try {
-					await this.plugin.setSecret(SECRET_KEY_CLIENT_SECRET, value);
-					this.plugin.settings.clientSecretConfigured = true;
-					await this.plugin.saveSettings();
-					inputEl.value = '';
-					this.display(); // Refresh
-					logger.info('Client Secret saved');
-				} catch (error) {
-					logger.error('Failed to save Client Secret', error);
-				}
-			}));
+			.setDesc('Secret holding your Strava API client secret')
+			.addComponent(el => new SecretComponent(this.app, el)
+				.setValue(this.plugin.settings.clientSecretSecretId)
+				.onChange(value => {
+					this.plugin.settings.clientSecretSecretId = value;
+					void this.plugin.saveSettings().then(() => this.updateConnectionStatus());
+				}));
 
 		// Authorization
 		new Setting(containerEl).setName('Authorization').setHeading();
@@ -161,14 +119,14 @@ export class StravaSyncSettingTab extends PluginSettingTab {
 				.addButton(button => button
 					.setButtonText('Authorize')
 					.setCta()
-					.onClick(async () => {
-						if (!this.plugin.settings.clientIdConfigured || !this.plugin.settings.clientSecretConfigured) {
+					.onClick(() => {
+						if (!this.plugin.settings.clientIdSecretId || !this.plugin.settings.clientSecretSecretId) {
 							this.connectionStatusEl?.setText('Please enter client ID and client secret first');
 							this.connectionStatusEl?.addClass('error');
 							return;
 						}
 
-						await this.plugin.startOAuthFlow();
+						this.plugin.startOAuthFlow();
 					}));
 
 			// Step 2: Paste the code
@@ -344,7 +302,7 @@ export class StravaSyncSettingTab extends PluginSettingTab {
 		this.connectionStatusEl.empty();
 		this.connectionStatusEl.removeClass('success', 'error', 'pending');
 
-		if (!this.plugin.settings.clientIdConfigured || !this.plugin.settings.clientSecretConfigured) {
+		if (!this.plugin.settings.clientIdSecretId || !this.plugin.settings.clientSecretSecretId) {
 			this.connectionStatusEl.setText('Enter API credentials above');
 			this.connectionStatusEl.addClass('pending');
 		} else if (this.plugin.isAuthenticated()) {
